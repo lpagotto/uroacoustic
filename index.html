@@ -1,20 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Urofluxometria Acústica</title>
   <style>
-    /* Seu estilo existente aqui */
+    :root {
+      --primary-color: #007bff;
+      --accent-color: #17a2b8;
+      --background-color: #f4f8fb;
+      --card-color: #ffffff;
+      --text-color: #212529;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: var(--card-color);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: var(--primary-color);
+    }
+
+    .header p {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #6c757d;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background-color: var(--primary-color);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #btnParar {
+      background-color: #dc3545;
+    }
+
+    #btnParar:hover {
+      background-color: #c82333;
+    }
+
+    #recordingUI {
+      display: none;
+    }
+
+    #statusGravacao {
+      text-align: center;
+      font-weight: bold;
+      margin: 20px 0;
+      display: none;
+    }
+
     #audioPlayer {
       width: 100%;
       margin-top: 20px;
       display: none;
     }
+
     #grafico {
       display: none;
       width: 100%;
       margin-top: 20px;
-      border-radius: 4px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
@@ -30,19 +113,19 @@
       <span class="secondary-text">Novo exame</span>
     </button>
 
-    <div id="recordingUI" style="display: none;">
+    <div id="recordingUI">
       <button id="btnParar">Parar</button>
     </div>
 
-    <div id="statusGravacao" style="display: none;"></div>
+    <div id="statusGravacao"></div>
     <audio id="audioPlayer" controls></audio>
-    <img id="grafico" />
+    <img id="grafico" alt="Gráfico de Vazão" />
   </div>
 
   <script>
     let gravador, chunks = [], tempoGravacao = 0;
     let timerInterval;
-    const baseApiUrl = 'https://2634-34-60-200-96.ngrok-free.app';
+    const baseApiUrl = 'https://0a83-34-60-200-96.ngrok-free.app';
     const endpoint = '/process_audio';
 
     document.getElementById('btnIniciar').onclick = async () => {
@@ -83,14 +166,14 @@
           }
 
           document.getElementById('recordingUI').style.display = 'none';
-          document.getElementById('btnIniciar').style.display = 'flex';
+          document.getElementById('btnIniciar').style.display = 'block';
           document.getElementById('statusGravacao').textContent = 'Exame finalizado';
           document.getElementById('statusGravacao').style.display = 'block';
         };
 
         gravador.start();
         document.getElementById('btnIniciar').style.display = 'none';
-        document.getElementById('recordingUI').style.display = 'flex';
+        document.getElementById('recordingUI').style.display = 'block';
         document.getElementById('statusGravacao').style.display = 'block';
         document.getElementById('statusGravacao').textContent = 'Exame em progresso por 0s';
 
