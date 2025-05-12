@@ -2,103 +2,20 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>App de Exame de Áudio</title>
+  <title>Urofluxometria Acústica</title>
   <style>
-    :root {
-      --primary-color: #007bff;
-      --stop-color: #6c757d;
-      --background-color: #f5f7fa;
-      --card-color: #ffffff;
-      --text-color: #333333;
-      --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      --button-width: 50%;
-      --button-height: 64px;
-    }
-    body {
-      background: var(--background-color);
-      font-family: var(--font-family);
-      color: var(--text-color);
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
+    /* Seu estilo existente aqui */
+    #audioPlayer {
       width: 100%;
-      max-width: 600px;
-      background: var(--card-color);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-    .header { text-align: center; margin-bottom: 20px; }
-    h1 { margin: 0; font-size: 24px; }
-    button { font-family: inherit; border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
-
-    /* Botões Iniciar e Parar com tamanho fixo */
-    #btnIniciar, #btnParar {
-      width: var(--button-width);
-      height: var(--button-height);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 0 auto;
-    }
-    #btnIniciar {
-      background: var(--primary-color);
-      color: #fff;
-      padding: 0;
-      flex-direction: column;
-      gap: 0;
-    }
-    #btnIniciar span.primary-text { font-size: 20px; font-weight: bold; }
-    #btnIniciar span.secondary-text { font-size: 14px; opacity: 0.9; }
-    #btnIniciar:hover { background: #0069d9; }
-
-    #btnParar {
-      background: var(--stop-color);
-      color: #fff;
-      font-size: 16px;
-    }
-    #btnParar:hover { background: #5a6268; }
-
-    #statusGravacao {
-      font-weight: bold;
-      font-size: 16px;
-      color: var(--text-color);
-      margin: 10px auto;
-      text-align: center;
+      margin-top: 20px;
       display: none;
     }
-
-    #recordingUI {
+    #grafico {
       display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      margin-top: 10px;
-      gap: 10px;
-    }
-
-    #grafico { display: none; width: 100%; margin-top: 20px; border-radius: 4px; }
-
-    #listaGravacoes { list-style: none; padding: 0; margin-top: 20px; }
-    #listaGravacoes li {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      border: 1px solid #ddd;
+      width: 100%;
+      margin-top: 20px;
       border-radius: 4px;
-      margin-bottom: 10px;
-      background: #fafafa;
     }
-    #listaGravacoes li .item-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-    #listaGravacoes li:hover { background: #eef5fc; }
-    .delete-btn { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--stop-color); }
   </style>
 </head>
 <body>
@@ -113,127 +30,95 @@
       <span class="secondary-text">Novo exame</span>
     </button>
 
-    <div id="recordingUI">
+    <div id="recordingUI" style="display: none;">
       <button id="btnParar">Parar</button>
     </div>
 
-    <div id="statusGravacao"></div>
+    <div id="statusGravacao" style="display: none;"></div>
+    <audio id="audioPlayer" controls></audio>
     <img id="grafico" />
-    <ul id="listaGravacoes"></ul>
   </div>
 
   <script>
-    let gravador, chunks = [], recordings = [];
-    let timerInterval, tempoGravacao = 0;
-    let nextExamNumber = 1;
-    const baseApiUrl = 'https://1f4c-35-245-156-242.ngrok-free.app';
+    let gravador, chunks = [], tempoGravacao = 0;
+    let timerInterval;
+    const baseApiUrl = 'https://2634-34-60-200-96.ngrok-free.app';
     const endpoint = '/process_audio';
 
-    function formatTimestamp(date) {
-      return date.toLocaleString('pt-BR', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    }
-
-    function renderLista() {
-      const ul = document.getElementById('listaGravacoes');
-      ul.innerHTML = '';
-      recordings.forEach(rec => {
-        const li = document.createElement('li');
-        const row = document.createElement('div');
-        row.className = 'item-row';
-
-        const info = document.createElement('span');
-        info.textContent = `Exame ${rec.examNumber} - ${rec.timestamp} ${rec.duration}s`;
-        info.style.cursor = 'pointer';
-
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '🗑️';
-        delBtn.className = 'delete-btn';
-        delBtn.onclick = e => {
-          e.stopPropagation();
-          recordings = recordings.filter(r => r.examNumber !== rec.examNumber);
-          renderLista();
-          document.getElementById('grafico').style.display = 'none';
-        };
-
-        row.appendChild(info);
-        row.appendChild(delBtn);
-        li.appendChild(row);
-
-        const audioEl = document.createElement('audio');
-        audioEl.controls = true;
-        audioEl.style.display = 'none';
-        audioEl.style.width = '100%';
-        li.appendChild(audioEl);
-
-        info.onclick = () => {
-          if (audioEl.style.display === 'none') {
-            audioEl.src = URL.createObjectURL(rec.blob);
-            audioEl.style.display = 'block';
-            audioEl.play();
-            const reader = new FileReader();
-            reader.readAsDataURL(rec.blob);
-            reader.onloadend = () => {
-              const base64 = reader.result.split(',')[1];
-              fetch(baseApiUrl + endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
-                body: JSON.stringify({ audio_base64: base64 })
-              })
-              .then(r => r.json())
-              .then(data => {
-                const img = document.getElementById('grafico');
-                img.src = 'data:image/png;base64,' + data.imagem;
-                img.style.display = 'block';
-              })
-              .catch(e => alert('Erro: ' + e));
-            };
-          } else {
-            audioEl.style.display = 'none';
-          }
-        };
-
-        ul.appendChild(li);
-      });
-    }
-
     document.getElementById('btnIniciar').onclick = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      gravador = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      chunks = [];
-      tempoGravacao = 0;
-      gravador.ondataavailable = e => chunks.push(e.data);
-      gravador.start();
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        gravador = new MediaRecorder(stream);
+        chunks = [];
+        tempoGravacao = 0;
 
-      document.getElementById('btnIniciar').style.display = 'none';
-      document.getElementById('recordingUI').style.display = 'flex';
-      document.getElementById('statusGravacao').style.display = 'none';
+        gravador.ondataavailable = e => chunks.push(e.data);
 
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        tempoGravacao++;
+        gravador.onstop = async () => {
+          clearInterval(timerInterval);
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+
+          // Exibir o áudio gravado
+          const audioURL = URL.createObjectURL(audioBlob);
+          const audioPlayer = document.getElementById('audioPlayer');
+          audioPlayer.src = audioURL;
+          audioPlayer.style.display = 'block';
+
+          // Enviar para o servidor
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'audio.webm');
+
+          try {
+            const response = await fetch(baseApiUrl + endpoint, {
+              method: 'POST',
+              body: formData
+            });
+            const data = await response.json();
+            const img = document.getElementById('grafico');
+            img.src = 'data:image/png;base64,' + data.imagem;
+            img.style.display = 'block';
+          } catch (error) {
+            console.error('Erro ao enviar o áudio:', error);
+            alert('Erro ao processar o áudio.');
+          }
+
+          document.getElementById('recordingUI').style.display = 'none';
+          document.getElementById('btnIniciar').style.display = 'flex';
+          document.getElementById('statusGravacao').textContent = 'Exame finalizado';
+          document.getElementById('statusGravacao').style.display = 'block';
+        };
+
+        gravador.start();
+        document.getElementById('btnIniciar').style.display = 'none';
+        document.getElementById('recordingUI').style.display = 'flex';
         document.getElementById('statusGravacao').style.display = 'block';
-        document.getElementById('statusGravacao').textContent = `Exame em progresso por ${tempoGravacao}s`;
-      }, 1000);
+        document.getElementById('statusGravacao').textContent = 'Exame em progresso por 0s';
+
+        timerInterval = setInterval(() => {
+          tempoGravacao++;
+          document.getElementById('statusGravacao').textContent = `Exame em progresso por ${tempoGravacao}s`;
+        }, 1000);
+      } catch (error) {
+        console.error('Erro ao acessar o microfone:', error);
+        alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+      }
     };
 
     document.getElementById('btnParar').onclick = () => {
-      gravador.stop();
-      clearInterval(timerInterval);
-
-      const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-      recordings.push({
-        examNumber: nextExamNumber++,
-        blob: audioBlob,
-        duration: tempoGravacao,
-        timestamp: formatTimestamp(new Date())
-      });
-      renderLista();
-
-      document.getElementById('recordingUI').style.display = 'none';
-      document.getElementById('btnIniciar').style.display = 'flex';
-      document.getElementById('statusGravacao').textContent = 'Exame finalizado';
-      document.getElementById('statusGravacao').style.display = 'block';
+      if (gravador && gravador.state === 'recording') {
+        gravador.stop();
+      }
     };
+
+    // Garantir que apenas um áudio seja reproduzido por vez
+    document.addEventListener('play', function(e){
+      const audios = document.getElementsByTagName('audio');
+      for(let i = 0, len = audios.length; i < len;i++){
+        if(audios[i] != e.target){
+          audios[i].pause();
+        }
+      }
+    }, true);
   </script>
 </body>
 </html>
