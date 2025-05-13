@@ -105,7 +105,7 @@
   <div class="container">
     <div class="header">
       <h1>Urofluxometria Acústica</h1>
-      <p>Pressione o botão abaixo antes de começar a urinar.</p>
+      <p>Clique no botão abaixo antes de urinar.<br>Aponte o jato de urina para o centro da água.</p>
     </div>
 
     <button id="btnIniciar">
@@ -125,7 +125,7 @@
   <script>
     let gravador, chunks = [], tempoGravacao = 0;
     let timerInterval;
-    const baseApiUrl = 'https://b95b-34-60-200-96.ngrok-free.app';
+    const baseApiUrl = 'https://2df6-34-58-187-150.ngrok-free.app';
     const endpoint = '/process_audio';
 
     document.getElementById('btnIniciar').onclick = async () => {
